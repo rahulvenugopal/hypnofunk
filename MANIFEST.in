@@ -1,6 +1,5 @@
 include README.md
 include LICENSE
-include requirements.txt
 include CHANGELOG.md
 recursive-include hypnofunk *.py
 recursive-include examples *.py

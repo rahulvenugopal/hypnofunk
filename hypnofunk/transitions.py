@@ -5,7 +5,7 @@ This module provides functions for analyzing transitions between sleep stages,
 calculating transition probabilities, and computing sleep fragmentation metrics.
 """
 
-from typing import List, Tuple, Optional
+from typing import List, Tuple
 import numpy as np
 import pandas as pd
 
@@ -20,7 +20,6 @@ from hypnofunk.utils import (
 
 def compute_transition_matrix(
     hypnogram: Hypnogram,
-    stages: Optional[List[int]] = None
 ) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Compute transition count and probability matrices from a hypnogram.

@@ -5,7 +5,7 @@ This module provides functions for calculating sleep macrostructure parameters
 from hypnograms, including sleep efficiency, stage durations, and sleep cycles.
 """
 
-from typing import List, Tuple, Union, Optional
+from typing import List, Tuple, Optional
 import pandas as pd
 import numpy as np
 try:

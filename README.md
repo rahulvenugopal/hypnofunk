@@ -1,241 +1,158 @@
 # hypnofunk 🌙
 
-A comprehensive Python package for sleep analysis and hypnogram processing.
+<p align="center">
+  <img src="https://github.com/rahulvenugopal/PyKumbogram/blob/main/Logo.png" width="200" alt="hypnofunk logo">
+</p>
+
 
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-## Overview
+**hypnofunk** is a high-performance toolkit for sleep researchers. It calculates 40+ macrostructure parameters, performs first-order **Markov-chain transition analysis**, and detects sleep cycles—all from simple hypnogram sequences.
 
-**hypnofunk** provides a complete toolkit for analyzing sleep data from hypnograms (sleep stage sequences). It calculates comprehensive sleep macrostructure parameters, performs transition analysis, and generates publication-quality visualizations.
-
-### Key Features
-
-- 📊 **Comprehensive Sleep Metrics**: Calculate 40+ sleep parameters including TST, sleep efficiency, stage durations, and more
-- 🔄 **Transition Analysis**: Markov chain analysis of sleep stage transitions with fragmentation metrics
-- 📈 **Visualization**: Generate hypnogram plots with automatic sleep cycle detection
-- 🎯 **Type-Safe**: Full type hints throughout the codebase
-- 📚 **Well-Documented**: Comprehensive docstrings with examples for all functions
-- 🔧 **Flexible**: Works with lists, numpy arrays, or pandas Series
+---
 
 ## Installation
 
-### Basic Installation
-
 ```bash
+# Core package
 pip install hypnofunk
-```
 
-### Full Installation (with optional dependencies)
-
-For complete functionality including Lempel-Ziv complexity and advanced plotting:
-
-```bash
+# Full installation — includes Lempel-Ziv complexity, plotting, and EDF support
 pip install hypnofunk[full]
 ```
 
-### Development Installation
+---
 
-```bash
-git clone https://github.com/yourusername/hypnofunk.git
-cd hypnofunk
-pip install -e .[dev]
-```
+## Supported Input Formats
+
+### Hypnogram data (in-memory)
+
+hypnofunk accepts standard AASM sleep stage labels (`W`, `N1`, `N2`, `N3`, `R`) as:
+- **Python lists**, **NumPy arrays**, or **Pandas Series**.
+
+### File formats (via example workflow)
+
+The included [`polyman_analysis.py`](examples/polyman_analysis.py) provides a turnkey solution for:
+- **EDF / EDF+**: Reads Polyman-style annotations directly.
+- **CSV**: Processes exported spreadsheets with epoch-by-epoch scoring.
+
+---
+
+## Standard Analysis Parameters
+
+hypnofunk uses industry-standard defaults, all of which are configurable via function arguments:
+
+| Parameter | Default | Logic |
+|---|---|---|
+| `epoch_duration` | `30s` | The standard temporal resolution for clinical sleep scoring. |
+| `max_wake_epochs` | `10` | Keeps 5 mins of wake after final sleep before trimming terminal wake. |
+| `min_nrem_epochs` | `30` | Defines a NREM cycle as ≥15 mins of continuous NREM starting with N2. |
+| `min_rem_epochs` | `10` | Subsequent REM cycles must be ≥5 mins (1st REM cycle can be any length). |
+
+---
+
+## Sleep Cycle Detection Logic
+
+Our detection algorithms follow standard clinical research criteria to ensure consistency across datasets:
+
+### NREM Cycles 🌙
+A sequence is identified as a NREM cycle if:
+1.  It **starts with N2** sleep.
+2.  It contains at least **15 minutes** (30 epochs) of continuous NREM (N1, N2, or N3).
+3.  This prevents short "transitional" light sleep from being miscounted as a full cycle.
+
+### REM Cycles ⚡
+REM detection handles the unique nature of early-night sleep:
+1.  **First REM Cycle**: Accepted at any length (standard research practice).
+2.  **Subsequent REM Cycles**: Must be at least **5 minutes** (10 epochs) long.
+3.  This ensures that REM "fragments" commonly found in fragmented sleep don't artificially inflate cycle counts.
+
+---
+
+## Markov-Chain Transition Analysis 🔄
+
+hypnofunk provides a robust framework for quantifying sleep stability and fragmentation using first-order Markov chains:
+
+- **Full Transition Matrix**: A 5×5 matrix of probabilities for transitions between every sleep stage (W, N1, N2, N3, R).
+- **Stage Persistence**: The probability of remaining in a specific stage (diagonal nodes of the Markov chain).
+- **Awakening Probabilities**: The specific likelihood of transitioning to Wake from each individual sleep stage.
+- **Sleep Compactness**: A global consolidation index calculated as the mean persistence across all sleep stages.
+- **Fragility Metrics**: Proportion of all transitions that result in awakening.
+
+---
 
 ## Quick Start
 
 ```python
 from hypnofunk import hypnoman, analyze_transitions
 
-# Your hypnogram (sleep stages per epoch)
+# 10 epochs Wake, 50 N2, 30 N3, 20 REM, 5 Wake
 hypnogram = ["W"]*10 + ["N2"]*50 + ["N3"]*30 + ["R"]*20 + ["W"]*5
 
-# Calculate sleep parameters
-sleep_params = hypnoman(hypnogram, epoch_duration=30)
-print(f"Total Sleep Time: {sleep_params['TST'].values[0]:.1f} minutes")
-print(f"Sleep Efficiency: {sleep_params['Sleep_efficiency'].values[0]:.1f}%")
+# Get 40+ parameters in one line (Macrostructure)
+params = hypnoman(hypnogram, epoch_duration=30)
+print(f"TST: {params['TST'].values[0]:.1f} min | SE: {params['Sleep_efficiency'].values[0]:.1f}%")
 
-# Analyze transitions
-transitions = analyze_transitions(hypnogram)
-print(f"Sleep Compactness: {transitions['Sleep_Compactness'].values[0]:.3f}")
-print(f"Total Transitions: {transitions['Total_Transitions'].values[0]}")
+# Analyze stage transitions & Markov chain dynamics
+trans = analyze_transitions(hypnogram)
+print(f"Sleep Compactness: {trans['Sleep_Compactness'].values[0]:.3f}")
+print(f"Prob. N2 Persistence: {trans['Persistence_N2'].values[0]:.3f}")
 ```
+
+---
 
 ## Core Functionality
 
-### Sleep Macrostructure Analysis
+### Sleep Macrostructure — `hypnoman()`
+Returns a single-row `pd.DataFrame` containing:
+- **Time metrics:** TRT, TST, SPT, WASO, SOL.
+- **Efficiency:** Sleep Efficiency (SE), Sleep Maintenance Efficiency (SME).
+- **Stage statistics:** Duration, percentage, and onset latency for all stages.
+- **Streak analysis:** Longest, mean, and median "runs" (streaks) for every stage.
+- **Information Theory:** **Lempel-Ziv complexity (LZc)** — a non-linear measure of sleep stage variety (requires `antropy`).
 
-The `hypnoman()` function calculates comprehensive sleep parameters:
+### Transition Analysis — `analyze_transitions()`
+Performs the Markov-chain analysis described above, returning:
+- Total transitions (fragmentation count).
+- Probability of awakening.
+- Sleep compactness index.
+- Per-stage persistence and awakening probabilities.
+- Complete transition matrix (25 probability values).
 
-**Time Metrics:**
-
-- Total Recording Time (TRT)
-- Total Sleep Time (TST)
-- Sleep Period Time (SPT)
-- Wake After Sleep Onset (WASO)
-- Sleep Onset Latency (SOL)
-
-**Efficiency Metrics:**
-
-- Sleep Efficiency (SE)
-- Sleep Maintenance Efficiency (SME)
-
-**Stage Metrics:**
-
-- Duration and percentage for each stage (W, N1, N2, N3, R)
-- Onset latencies
-- Longest, mean, and median streak lengths
-
-**Complexity:**
-
-- Lempel-Ziv complexity (requires `antropy`)
-
-### Transition Analysis
-
-The `analyze_transitions()` function provides:
-
-**Fragmentation Metrics:**
-
-- Total number of transitions
-- Probability of transitions to wake
-- Sleep compactness index
-
-**Markov Analysis:**
-
-- Full transition probability matrix (5×5)
-- Stage persistence probabilities
-- Awakening probabilities from each stage
-
-### Sleep Cycle Detection
-
-Automatically detect NREM and REM sleep cycles:
-
-```python
-from hypnofunk.core import find_nremstretches, find_rem_stretches
-
-# Detect NREM cycles (≥30 consecutive NREM epochs starting with N2)
-nrem_stretches, nrem_indices = find_nremstretches(hypnogram)
-
-# Detect REM cycles (first REM of any length, subsequent ≥10 epochs)
-rem_stretches, rem_indices = find_rem_stretches(hypnogram)
-```
-
-### Visualization
-
-Create publication-quality hypnogram plots:
-
-```python
-from hypnofunk.visualization import plot_hypnogram_with_cycles
-
-# Plot hypnogram with automatic cycle detection
-fig = plot_hypnogram_with_cycles(
-    hypnogram,
-    epoch_duration=30,
-    save_path="hypnogram.png",
-    dpi=600
-)
-```
-
-## Example: Polyman EDF Analysis
-
-See [`examples/polyman_analysis.py`](examples/polyman_analysis.py) for a complete workflow that:
-
-1. Loads EDF files with sleep stage annotations
-2. Extracts hypnograms
-3. Calculates all sleep parameters
-4. Generates visualizations
-5. Exports results to CSV
-
-Run the example:
-
-```bash
-python examples/polyman_analysis.py
-```
+---
 
 ## API Reference
 
-### Core Module (`hypnofunk.core`)
+### `hypnofunk.io`
+- `read_edf_hypnogram()`: Standardized loader for Polyman EDF and EDF+ files.
 
-- `hypnoman(hypnogram, epoch_duration=30)` - Calculate all sleep parameters
-- `trim_terminal_wake(hypnogram, max_wake_epochs=10)` - Remove excessive terminal wake
-- `find_nremstretches(sequence, min_nrem_epochs=30)` - Detect NREM cycles
-- `find_rem_stretches(sequence, min_rem_epochs=10)` - Detect REM cycles
+### `hypnofunk.core`
+- `hypnoman()`: The main entry point for macrostructure metrics.
+- `find_nremstretches()` & `find_rem_stretches()`: Cycle detection engines.
+- `trim_terminal_wake()`: Utility to clean extended wake at the end of recordings.
 
-### Transitions Module (`hypnofunk.transitions`)
+### `hypnofunk.transitions`
+- `analyze_transitions()`: Main entry point for fragmentation and Markov metrics.
+- `compute_transition_matrix()`: Raw transition probability calculations.
+- `compute_sleep_compactness()`: Statistical consolidated sleep index.
 
-- `analyze_transitions(hypnogram)` - Complete transition analysis
-- `compute_transition_matrix(hypnogram)` - Calculate transition counts and probabilities
-- `compute_sleep_compactness(transition_probs)` - Calculate compactness index
+### `hypnofunk.visualization`
+- `plot_hypnogram_with_cycles()`: Clean hypnograms with cycle-overlay bars.
+- `plot_transition_matrix()`: Heatmap visualization of stage dynamics (Markov matrix).
 
-### Utilities Module (`hypnofunk.utils`)
-
-- `validate_hypnogram(hypnogram)` - Validate and convert hypnogram format
-- `convert_to_numeric(hypnogram)` - Convert labels to numeric codes
-- `convert_to_labels(hypnogram_numeric)` - Convert numeric codes to labels
-- `rle_encode(sequence)` - Run-length encoding
-- `epochs_to_minutes(epochs, epoch_duration)` - Convert epochs to minutes
-
-### Visualization Module (`hypnofunk.visualization`)
-
-- `plot_hypnogram_with_cycles(hypnogram, ...)` - Plot hypnogram with cycles
-- `plot_transition_matrix(transition_probs, ...)` - Plot transition heatmap
-
-## Data Format
-
-Hypnograms should use standard sleep stage labels:
-
-- `W` - Wake
-- `N1` - NREM Stage 1
-- `N2` - NREM Stage 2
-- `N3` - NREM Stage 3 (slow-wave sleep)
-- `R` - REM sleep
-
-Accepted input formats:
-
-- Python list: `["W", "N2", "N2", "R"]`
-- NumPy array: `np.array(["W", "N2", "N2", "R"])`
-- Pandas Series: `pd.Series(["W", "N2", "N2", "R"])`
-
-## Dependencies
-
-**Core:**
-
-- numpy ≥ 1.20.0
-- pandas ≥ 1.3.0
-- matplotlib ≥ 3.3.0
-
-**Optional (for full functionality):**
-
-- antropy ≥ 0.1.4 (Lempel-Ziv complexity)
-- yasa ≥ 0.6.0 (hypnogram plotting)
-- mne ≥ 1.0.0 (EDF file reading)
-
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+---
 
 ## Citation
 
-If you use hypnofunk in your research, please cite:
-
-```
+```bibtex
 @software{hypnofunk2026,
   author = {Venugopal, Rahul},
-  title = {hypnofunk: A Python package for sleep analysis},
-  year = {2026},
-  url = {https://github.com/rahulvenugopal/hypnofunk}
+  title  = {hypnofunk: A Python package for sleep analysis},
+  year   = {2026},
+  url    = {https://github.com/rahulvenugopal/hypnofunk}
 }
 ```
 
 ## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## Author
-
-**Rahul Venugopal**
-
-## Acknowledgments
-
-- Built with inspiration from YASA and other sleep analysis tools
-- Sleep cycle detection based on standard polysomnography criteria
+MIT — see [LICENSE](LICENSE) for details. Developed by **Rahul Venugopal**.

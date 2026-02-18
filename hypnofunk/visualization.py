@@ -186,7 +186,7 @@ def plot_transition_matrix(
     # Add text annotations
     for i in range(len(transition_probs.index)):
         for j in range(len(transition_probs.columns)):
-            text = ax.text(j, i, f'{transition_probs.iloc[i, j]:.2f}',
+            ax.text(j, i, f'{transition_probs.iloc[i, j]:.2f}',
                           ha="center", va="center", color="black", fontsize=9)
     
     ax.set_xlabel('To Stage')

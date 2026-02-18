@@ -1,14 +1,14 @@
 [build-system]
-requires = ["setuptools>=45", "wheel", "setuptools_scm>=6.2"]
+requires = ["setuptools>=45", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "hypnofunk"
-version = "0.1.0"
+version = "0.2.0"
 description = "A Python package for sleep analysis and hypnogram processing"
 readme = "README.md"
 authors = [
-    {name = "Rahul Venugopal", email = ""}
+    {name = "Rahul Venugopal"}
 ]
 license = {text = "MIT"}
 classifiers = [
@@ -51,6 +51,9 @@ Homepage = "https://github.com/rahulvenugopal/hypnofunk"
 Documentation = "https://github.com/rahulvenugopal/hypnofunk#readme"
 Repository = "https://github.com/rahulvenugopal/hypnofunk"
 "Bug Tracker" = "https://github.com/rahulvenugopal/hypnofunk/issues"
+
+[tool.setuptools.packages.find]
+exclude = ["tests*", "examples*"]
 
 [tool.black]
 line-length = 100
