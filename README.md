@@ -1,15 +1,13 @@
 # hypnofunk 🌙
 
 <p align="center">
-  <img src="https://github.com/rahulvenugopal/PyKumbogram/blob/main/Logo.png" width="200" alt="hypnofunk logo">
+  <img src="https://github.com/rahulvenugopal/PyKumbogram/blob/main/Logo.png" width="400" alt="hypnofunk logo">
 </p>
 
 
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![DOI](https://zenodo.org/badge/1142052114.svg)](https://doi.org/10.5281/zenodo.18713864)
-
-
 
 **hypnofunk** is a high-performance toolkit for sleep researchers. It calculates 40+ macrostructure parameters, performs first-order **Markov-chain transition analysis**, and detects sleep cycles—all from simple hypnogram sequences.
 
