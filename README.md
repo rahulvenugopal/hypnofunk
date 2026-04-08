@@ -4,6 +4,11 @@
   <img src="https://github.com/rahulvenugopal/PyKumbogram/blob/main/Logo.png" width="400" alt="hypnofunk logo">
 </p>
 
+# In next release (June 2026)
+1. Use edf reader instead of heavy mne to read edf annotations
+2. Better handling of transitions.py function to report sleep compactness correctly even when say N1 stage is not present
+3. Better documentation for onset (for example R onset is calculated from onset of a sleep stage and not from the start of the hypnogram)
+4. Improve annotation reading and autofixes when there are non sleep annotations like movements, ?s, other labels like leg movement or apnea
 
 [![Python Version](https://img.shields.io/badge/python-3.8%2B-blue.svg)](https://www.python.org/downloads/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
