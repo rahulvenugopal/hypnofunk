@@ -345,10 +345,10 @@ def hypnoman(
         ) * 100
     
     # Stage percentages (relative to SPT)
-    if sleep_data['SPT'].values[0] > 0:
+    if sleep_data['TST'].values[0] > 0:
         for stage in STAGE_LABELS:
             if stage != 'W' and hyp_series.isin([stage]).any():
-                perc = (stage_durations[stage] / sleep_data['SPT'].values[0]) * 100
+                perc = (stage_durations[stage] / sleep_data['TST'].values[0]) * 100
                 sleep_data[f'{stage}_percentage'] = round(perc, 2)
     
     # Sleep Efficiency
